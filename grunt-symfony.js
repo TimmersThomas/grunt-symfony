@@ -1,11 +1,11 @@
 /**
  * grunt-symfony
  * @author vitre
+ * @contributor Thomas Timmers
  * @licence MIT
  * @version 1.1.22
  * @url https://www.npmjs.org/package/grunt-symfony
  */
-
 "use strict"
 
 var fs = require('fs'),
@@ -13,58 +13,49 @@ var fs = require('fs'),
     extend = require('node.extend');
 
 //---
-
 var defaults = {
-    web: 'web',
-    src: 'src',
-    gruntFile: 'Gruntfile.js',
-    resources: 'Resources'
-};
-
-var options;
-
-var bundles;
-
-var grunt;
+      src: 'src',
+      gruntFile: 'Gruntfile.js',
+      resources_private: 'Resources/assets',
+      resources_public: 'Resources/public',
+    },
+    options,
+    bundles,
+    grunt;
 
 /**
  * getBundles
  * @param root
  * @param r
  */
-var getBundles = function (root, r) {
+var getBundles = function(root, r) {
     if (typeof root === 'undefined') {
         root = defaults.src;
     }
     if (typeof r === 'undefined') {
         r = [];
     }
-
     var files = fs.readdirSync(root);
     for (var i in files) {
-        var path = root + '/' + files[i];
-        if (fs.statSync(path).isDirectory()) {
-            if (path.match(/Bundle$/)) {
-
-                var name = path.substr(defaults.src.length + 1, path.length);
-                var name_camelcase = name.replace(/\//g, '');
-                var name_web = name_camelcase.toLowerCase().replace(/bundle$/, '');
+        var dirPath = root + '/' + files[i];
+        if (fs.statSync(dirPath).isDirectory()) {
+            if (dirPath.match(/Bundle$/) && fs.existsSync(path.join(dirPath, defaults.gruntFile))) {
+                console.log('---------------------------------');
+                console.log(dirPath, "- match");
 
                 var bundle = {
-                    name: name,
-                    name_camelcase: name_camelcase,
-                    name_web: name_web,
-                    path: path,
-                    resources: path + '/' + defaults.resources,
-                    web: options.web + '/bundles/' + name_web,
-                    web_public: '/bundles/' + name_web
+                    name: path.basename(dirPath),
+                    path: dirPath,
+                    resources_private: path.join(dirPath,defaults.resources_private),
+                    resources_public:  path.join(dirPath,defaults.resources_public)
                 };
 
-                //console.log(bundle);
+                console.log(bundle);
 
                 r.push(bundle);
+            } else {
+                getBundles(dirPath, r);
             }
-            getBundles(path, r);
         }
     }
     return r;
@@ -75,13 +66,11 @@ var getBundles = function (root, r) {
  * @param bundle
  * @param config
  */
-var importBundle = function (bundle, config) {
+var importBundle = function(bundle, config) {
     var gruntFile = bundle.path + '/' + defaults.gruntFile;
     if (fs.existsSync(gruntFile)) {
         var filePath = path.resolve(gruntFile);
-
         console.log('Importing bundle: ' + bundle.name + ' [' + gruntFile + ']');
-
         require(filePath)(grunt, config, bundle, options);
     }
 };
@@ -90,7 +79,7 @@ var importBundle = function (bundle, config) {
  * importBundles
  * @param config
  */
-var importBundles = function (config) {
+var importBundles = function(config) {
     bundles = getBundles();
     for (var i = 0; i < bundles.length; i++) {
         importBundle(bundles[i], config);
@@ -103,12 +92,14 @@ var importBundles = function (config) {
  * @param config
  * @param _options
  */
-exports.importBundles = function (_grunt, config, _options) {
+exports.importBundles = function(_grunt, config, _options) {
     grunt = _grunt;
+
     if (typeof _options === 'undefined') {
         options = defaults;
     } else {
         options = extend(true, {}, defaults, _options);
     }
+
     importBundles(config);
 }
