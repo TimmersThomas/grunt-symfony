@@ -3,19 +3,22 @@ grunt-symfony
 
 Grunt module for Symfony2.
 
-![Monthly downloads](http://img.shields.io/npm/dm/grunt-symfony.svg)
+Forked:
+--------
+
+By: Thomas Timmers for [Clear](http://cleardigital.be)
+Reason: Implementing custom workflow for our Symfony2 projects
 
 Features
 --------
 
-  * gruntfile import for src bundles
+  * Can use specific gruntfile (for specific tasks) for every src bundle
 
 Links
 -----
 
-**GitHub**: https://github.com/Vitre/grunt-symfony
+**GitHub**: https://github.com/TimmersThomas/grunt-symfony
 
-**NPM**: https://www.npmjs.org/package/grunt-symfony
 
 Install
 -------
