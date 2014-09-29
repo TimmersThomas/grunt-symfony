@@ -49,7 +49,7 @@ var getBundles = function(root, r) {
                     resources_public:  path.join(dirPath,defaults.resources_public)
                 };
 
-                //grunt.log.writeln("[Clear-Grunt-Symfony]",dirPath, " - config: ", JSON.stringify(bundle));
+                grunt.log.writeln("[Clear-Grunt-Symfony]",dirPath, " - config: ", JSON.stringify(bundle));
 
                 r.push(bundle);
             } else {
@@ -69,7 +69,7 @@ var importBundle = function(bundle, config) {
     var gruntFile = bundle.path + '/' + defaults.gruntFile;
     if (fs.existsSync(gruntFile)) {
         var filePath = path.resolve(gruntFile);
-        //grunt.log.writeln("[Clear-Grunt-Symfony]",'Importing bundle: ' + bundle.name + ' [' + gruntFile + ']');
+        grunt.log.writeln("[Clear-Grunt-Symfony]",'Importing bundle: ' + bundle.name + ' [' + gruntFile + ']');
         require(filePath)(grunt, config, bundle, options);
     }
 };
