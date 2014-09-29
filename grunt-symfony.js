@@ -16,7 +16,7 @@ var fs = require('fs'),
 var defaults = {
       src: 'src',
       gruntFile: 'Gruntfile.js',
-      resources_private: 'Resources/assets',
+      resources_private: 'Resources/private',
       resources_public: 'Resources/public',
     },
     options,
@@ -40,7 +40,7 @@ var getBundles = function(root, r) {
         var dirPath = root + '/' + files[i];
         if (fs.statSync(dirPath).isDirectory()) {
             if (dirPath.match(/Bundle$/) && fs.existsSync(path.join(dirPath, defaults.gruntFile))) {
-                grunt.log.writeln("[Clear-Grunt-Symfony]",dirPath, "- match");
+                //grunt.log.writeln("[Clear-Grunt-Symfony]",dirPath, "- match");
 
                 var bundle = {
                     name: path.basename(dirPath),
@@ -49,7 +49,7 @@ var getBundles = function(root, r) {
                     resources_public:  path.join(dirPath,defaults.resources_public)
                 };
 
-                grunt.log.writeln("[Clear-Grunt-Symfony]",dirPath, " - config: ", JSON.stringify(bundle));
+                //grunt.log.writeln("[Clear-Grunt-Symfony]",dirPath, " - config: ", JSON.stringify(bundle));
 
                 r.push(bundle);
             } else {
@@ -69,7 +69,7 @@ var importBundle = function(bundle, config) {
     var gruntFile = bundle.path + '/' + defaults.gruntFile;
     if (fs.existsSync(gruntFile)) {
         var filePath = path.resolve(gruntFile);
-        grunt.log.writeln("[Clear-Grunt-Symfony]",'Importing bundle: ' + bundle.name + ' [' + gruntFile + ']');
+        //grunt.log.writeln("[Clear-Grunt-Symfony]",'Importing bundle: ' + bundle.name + ' [' + gruntFile + ']');
         require(filePath)(grunt, config, bundle, options);
     }
 };
