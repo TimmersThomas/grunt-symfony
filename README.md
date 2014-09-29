@@ -6,8 +6,8 @@ Grunt module for Symfony2.
 Forked:
 --------
 
-By: Thomas Timmers for [Clear](http://cleardigital.be)
-Reason: Implementing custom workflow for our Symfony2 projects
+*By*: Thomas Timmers for [Clear](http://cleardigital.be)  
+*Reason*: Implementing custom workflow for our Symfony2 projects
 
 Features
 --------
@@ -31,32 +31,120 @@ Bundle gruntfile
 [BUNDLE_ROOT]/Gruntfile.js
 
 ```javascript
-module.exports = function (grunt, config, bundle, options) {
-
-    config.sass = config.sass || {};
-    config.sass[bundle.name + "_dist"] = {
-        "options": {
-            "style": "compressed",
-            "compass": true
-        },
-        "files": [
+module.exports = function (grunt, gruntConfig, bundle, options) {
+    gruntConfig.clean = gruntConfig.clean || {};
+    gruntConfig.clean['bundle-' + bundle.name + '__dev'] = {
+        files: [
             {
-                "expand": true,
-                "cwd": bundle.resources + "/public/scss",
-                "src": ["*.scss"],
-                "dest": options.web + "/admin/@/css",
-                "ext": ".css"
+                dot: true,
+                src: [bundle.resources_public]
+            }]
+    };
+
+    gruntConfig.sass = gruntConfig.sass || {};
+    gruntConfig.sass['bundle-' + bundle.name + '__dev'] = {
+        'options': {
+            sourceMap: true,
+            includePaths: [bundle.resources_private + '/styles', '<%= config.vendor %>/foundation/scss']
+        },
+        'files': [
+            {
+                'expand': true,
+                'cwd': bundle.resources_private + '/styles/',
+                'src': ['*.scss'],
+                'dest': bundle.resources_public + '/styles/',
+                'ext': '.css'
             }
         ]
     };
 
-    config.watch = config.watch || {};
-    config.watch[bundle.name + "_sass"] = {
-        files: bundle.resources + "/public/scss/**/*.scss",
-        tasks: ["sass:" + bundle.name + "_dist"]
+    gruntConfig.autoprefixer = gruntConfig.autoprefixer || {};
+    gruntConfig.autoprefixer['bundle-' + bundle.name + '__dev'] = {
+        files: [{
+            expand: true,
+            cwd: bundle.resources_public + '/styles/',
+            src: '{,*/}*.css',
+            dest: bundle.resources_public + '/styles/'
+        }]
     };
 
+    gruntConfig.browserify = gruntConfig.browserify || {};
+    gruntConfig.browserify['bundle-' + bundle.name + '__dev'] = {
+        files: {},
+        options: {
+            debug: true,
+            external: gruntConfig.bowerBundleKeys
+        }
+    };
+    gruntConfig.browserify['bundle-' + bundle.name + '__dev']['files'][bundle.resources_public  + '/scripts/main.js'] = [bundle.resources_private + '/scripts/main.js'];
+
+
+    gruntConfig.imagemin = gruntConfig.imagemin || {};
+    gruntConfig.imagemin['bundle-' + bundle.name + '__dev'] = {
+        files: [{
+            expand: true,
+            cwd: bundle.resources_private + '/images',
+            src: '{,*/}*.{gif,jpeg,jpg,png}',
+            dest: bundle.resources_public + '/images'
+        }]
+    };
+
+    gruntConfig.svgmin = gruntConfig.svgmin || {};
+    gruntConfig.svgmin['bundle-' + bundle.name + '__dev'] = {
+        files: [{
+            expand: true,
+            cwd: bundle.resources_private + '/images',
+            src: '{,*/}*.svg',
+            dest: bundle.resources_public + '/images'
+        }]
+    };
+
+
+    gruntConfig.copy = gruntConfig.copy || {};
+    gruntConfig.copy['bundle-' + bundle.name + '__dev'] = {
+        files: [{
+            expand: true,
+            cwd: bundle.resources_private,
+            src: [
+                '*.{ico,png,txt}',
+                '.htaccess',
+                'images/{,*/}*.webp',
+                'styles/fonts/{,*/}*.*',
+                'styles/{,*/}*.css'
+            ],
+            dest: bundle.resources_public
+        }]
+    };
+
+    gruntConfig.watch = gruntConfig.watch || {};
+    gruntConfig.watch['sass__' + bundle.name] = {
+        files: bundle.resources_private + '/styles/{,*/}*.{scss,sass}',
+        tasks: ['sass:bundle-' + bundle.name + '__dev', 'autoprefixer:bundle-' + bundle.name + '__dev']
+    };
+    gruntConfig.watch['browserify__' + bundle.name] = {
+        files: bundle.resources_private + '/scripts/{,*/}*.js',
+        tasks: ['browserify:bundle-' + bundle.name + '__dev']
+    };
+    gruntConfig.watch['imagemin__' + bundle.name] = {
+        files: bundle.resources_private + '/images/{,*/}*.{gif,jpeg,jpg,png}',
+        tasks: ['newer:imagemin:bundle-' + bundle.name + '__dev']
+    };
+    gruntConfig.watch['svgmin__' + bundle.name] = {
+        files: bundle.resources_private + '/images/{,*/}*.svg',
+        tasks: ['newer:svgmin:bundle-' + bundle.name + '__dev']
+    };
+    gruntConfig.watch['copy__' + bundle.name] = {
+        files: [
+            bundle.resources_private + '/*.{ico,png,txt}',
+            bundle.resources_private + '/.htaccess',
+            bundle.resources_private + '/images/{,*/}*.webp',
+            bundle.resources_private + '/styles/fonts/{,*/}*.*',
+            bundle.resources_private + '/styles/{,*/}*.css'
+        ],
+        tasks: ['newer:copy:bundle-' + bundle.name + '__dev']
+    };
 };
+
 ```
 
 Gruntfile implementation
@@ -82,10 +170,10 @@ module.exports = function (grunt) {
 
     // Symfony bundles import
     gruntSymfony.importBundles(grunt, config, {
-        web: 'web',
         src: 'src',
         gruntFile: 'Gruntfile.js',
-        resources: 'Resources'
+        resources_private: 'Resources/private',
+        resources_public: 'Resources/public',
     });
 
     //---
@@ -121,12 +209,6 @@ Recursively imports bundle Gruntfile.js
 
 #### Options
 
-##### web
-
-Type: `String` Default: 'web'
-
-Web folder path.
-
 ##### src
 
 Type: `String` Default: 'src'
@@ -139,12 +221,17 @@ Type: `String` Default: 'Gruntfile.js'
 
 Bundle Gruntfile filename.
 
-##### resources
+##### resources_private
 
-Type: `String` Default: 'Resources'
+Type: `String` Default: 'Resources/private'
 
-Bundle resources folder name.
+Bundle resources folder name for "private" (read: source) files.
 
+##### resources_public
+
+Type: `String` Default: 'Resources/public'
+
+Bundle resources folder name for "public" (read: compiled) files.
 
 
 ### bundle object
@@ -157,32 +244,20 @@ Type: `String`
 
 Bundle name.
 
-##### name_camelcase
-
-Type: `String`
-
-Bundle name in camelcase.
-
-##### name_web
-
-Type: `String`
-
-Bundle web name.
-
 ##### path
 
 Type: `String`
 
 Bundle path.
 
-##### resources
+##### resources_private
 
 Type: `String`
 
-Bundle resources path.
+Bundle private resources path.
 
-##### web
+##### resources_public
 
 Type: `String`
 
-Bundle web path.
+Bundle public resources path.
